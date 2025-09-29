@@ -1,0 +1,36 @@
+{
+  "name": "sacred-records-node",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/book-of-mormon-heartland/sacred-records-node.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/book-of-mormon-heartland/sacred-records-node/issues"
+  },
+  "homepage": "https://github.com/book-of-mormon-heartland/sacred-records-node#readme",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.4.0",
+    "google-auth-library": "^10.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3"
+  }
+}
