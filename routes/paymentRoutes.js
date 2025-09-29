@@ -140,70 +140,71 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
 });
 
 paymentRoutes.post('/createSubscription', async (req, res) => {
-  console.log("In Subscription intent");
-  const { payment_method_id } = req.body;
-  //console.log("amt: " + req.body.amount);
-  //begin security check
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).send('Unauthorized: No token provided or malformed.');
-  }
-  const jwtToken = authHeader.split(' ')[1];
-  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
-      return res.status(500).send('Unauthorized: Token is invalid or expired.');
-  }
-  // end security check
+  try {
+    console.log("In Subscription intent");
+    const { payment_method_id } = req.body;
+    //console.log("amt: " + req.body.amount);
+    //begin security check
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).send('Unauthorized: No token provided or malformed.');
+    }
+    const jwtToken = authHeader.split(' ')[1];
+    if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+        return res.status(500).send('Unauthorized: Token is invalid or expired.');
+    }
+    // end security check
 
-  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
-  const userId = decodedPayload.userId;
-  let user = await getUser(userId);
-  let userEmail = user.email;
-  console.log(userEmail);
-  const priceFromSearch = await stripeClient.prices.search({
-    query: 'metadata[\'name\']:\'quetzal-condor-subscription\'',
-  });
-
-
-  let priceId = priceFromSearch.data[0].id 
-  
-  const customerSearch = await stripeClient.customers.search({
-    query: 'metadata[\'internal_user_id\']:\''+ userId + '\'',
-  });
-  let customerId = "";
-
-  if(customerSearch.data.length==0) { 
-    console.log("need to create the customer");
-    const customer = await stripeClient.customers.create({
-      payment_method: payment_method_id,
-      email: userEmail,
-      invoice_settings: {
-        default_payment_method: payment_method_id,
-      },
-        // Add payment method and other details here
+    const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+    const userId = decodedPayload.userId;
+    let user = await getUser(userId);
+    let userEmail = user.email;
+    console.log(userEmail);
+    const priceFromSearch = await stripeClient.prices.search({
+      query: 'metadata[\'name\']:\'quetzal-condor-subscription\'',
     });
 
-    console.log("customer did not exist - created new one");
-    customerId = customer.id; // This is what you need
-  } else {
-    console.log("customer already exists");
-    customerId = customerSearch.data[0].id;
 
-    await stripeClient.customers.update(customerId, {
+    let priceId = priceFromSearch.data[0].id 
+    
+    const customerSearch = await stripeClient.customers.search({
+      query: 'metadata[\'internal_user_id\']:\''+ userId + '\'',
+    });
+    let customerId = "";
+
+    if(customerSearch.data.length==0) { 
+      console.log("need to create the customer");
+      const customer = await stripeClient.customers.create({
+        payment_method: payment_method_id,
+        email: userEmail,
         invoice_settings: {
-            default_payment_method: payment_method_id,
+          default_payment_method: payment_method_id,
         },
-    });
-  }
+          // Add payment method and other details here
+      });
 
-  await stripeClient.paymentMethods.attach(
+      console.log("customer did not exist - created new one");
+      customerId = customer.id; // This is what you need
+    } else {
+      console.log("customer already exists");
+      customerId = customerSearch.data[0].id;
+
+      await stripeClient.customers.update(customerId, {
+          invoice_settings: {
+              default_payment_method: payment_method_id,
+          },
+      });
+    }
+
+    await stripeClient.paymentMethods.attach(
       payment_method_id,
       { customer: customerId }
-  );
+    );
 
-  console.log("priceId: " + priceId );
-  console.log("customerId: " + customerId);
+    console.log("priceId: " + priceId );
+    console.log("customerId: " + customerId);
 
-  try {
+    try {
       const subscription = await stripeClient.subscriptions.create({
         customer: customerId,
         items: [{
@@ -220,7 +221,7 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
         expand: ['latest_invoice.payment_intent'], 
       });
 
- 
+
       const paymentIntent = subscription.latest_invoice?.payment_intent;
       if (!paymentIntent) {
           throw new Error("Stripe did not return a PaymentIntent. Check your customer and price IDs.");
@@ -233,16 +234,19 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
         message:"success",
         clientSecret: clientSecret,
       });
-      
+    } catch (e) {
+        console.error(e); // Use console.error for errors
+        //return res.status(401).send('Unauthorized: No token provided or malformed.');
+
+        return res.status(400).json({
+          error: e,
+        });
+    }
   } catch (e) {
-      console.error(e); // Use console.error for errors
-      //return res.status(401).send('Unauthorized: No token provided or malformed.');
-
-      return res.status(400).json({
-        error: e,
-      });
+    return res.status(400).json({
+      error: e.message,
+    });
   }
-
 });
 
 /*
