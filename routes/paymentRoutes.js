@@ -234,8 +234,10 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
       
   } catch (e) {
       console.error(e); // Use console.error for errors
+      //return res.status(401).send('Unauthorized: No token provided or malformed.');
+
       return res.status(400).json({
-        error: e.message,
+        error: e,
       });
   }
 
