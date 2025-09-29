@@ -61,6 +61,7 @@ paymentRoutes.post('/intent', async (req, res) => {
 });
 
 paymentRoutes.post('/setupIntent', async (req, res) => {
+  let increment = 0;
   console.log("In setupIntent");
   //begin security check
   const authHeader = req.headers.authorization;
@@ -72,36 +73,54 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
+  increment++;
+  console.log("token fine - continuing");
+  // end security check
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
   let user = await getUser(userId);
   let userEmail = user.email;
   console.log(userEmail);
+  increment=2;
 
   const customerSearch = await stripeClient.customers.search({
     query: 'metadata[\'internal_user_id\']:\''+ userId + '\'',
   });
   let customerId = "";
   try {
+      increment=3;
+
     if(customerSearch.data.length==0) { 
       console.log("need to create the customer");
+
+      increment=4;
       let customer = await stripeClient.customers.create({
         metadata: {
             internal_user_id: userId
         }
       });    
+      increment=5;
+
       console.log("customer did not exist - created new one");
       customerId = customer.id; // This is what you need
     } else {
+            increment=6;
+
       console.log("customer already exists");
       customerId = customerSearch.data[0].id;
     }
   } catch (e) {
+    increment=7;
+
     console.log("error in customer search");
     console.log(e);
-    return res.status(400).json({ error: e.message });
+    return res.status(400).json({ 
+      error: e,
+      message: increment,
+     });
   }
 
+  increment=8;
    // 2. Create the SetupIntent
     try {
         const setupIntent = await stripeClient.setupIntents.create({
@@ -118,6 +137,7 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
                 enabled: true,
             },
         });
+       increment=9;
 
         // 3. Send the essential client secret back to your React Native app
         // The client secret is what your React Native app will use to confirm the SetupIntent.
@@ -126,10 +146,14 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
             setupIntentClientSecret: setupIntent.client_secret,
             customerId: customerId,
         });
+      increment=11;
 
     } catch (error) {
         console.error('Error creating SetupIntent:', error);
-        res.status(500).json({ error: error.message });
+        res.status(400).json({ 
+          error: error,
+          message: increment, 
+        });
     }
 
 });
