@@ -24,8 +24,6 @@ if(process.env.NODE_ENV && process.env.NODE_ENV==="production") {
   SK =  process.env.DEV_SK;
   QUETZAL_CONDOR_PRICE_ID =  process.env.DEV_QUETZAL_CONDOR_PRICE_ID;
 }
-//console.log("Stripe Secret Key: " + STRIPE_SECRET_KEY);
-
 
 
 import stripe from 'stripe';
@@ -199,32 +197,6 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
 
   console.log("priceId: " + priceId );
   console.log("customerId: " + customerId);
-/*
-  const customer = await stripeClient.customers.create({
-      email: userEmail,
-      // Add payment method and other details here
-  });
-
-  return res.json({
-      message:"success"
-  });
-
-
-
-  // 1. Attach the Payment Method to the Customer (if not already done)
-        await stripe.paymentMethods.attach(
-            paymentMethodId,
-            { customer: customerId }
-        );
-
-        // 2. Update the Customer's default payment method
-        await stripe.customers.update(customerId, {
-            invoice_settings: {
-                default_payment_method: paymentMethodId,
-            },
-        });
-*/
-
 
   try {
       const subscription = await stripeClient.subscriptions.create({
@@ -269,7 +241,7 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
 
 });
 
-
+/*
 paymentRoutes.post('/createSubscription', async (req, res) => {
     const { customerId, priceId, paymentMethodId } = req.body;
 
@@ -311,7 +283,7 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
+*/
 paymentRoutes.post('/createOrder', async (req, res) => {
   //begin security check
   const authHeader = req.headers.authorization;

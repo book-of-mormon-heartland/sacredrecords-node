@@ -32,7 +32,8 @@ router.post('/POST/setLanguage', (req, res) => {
         return res.status(401).send('Unauthorized: Token is invalid or expired.');
     }
     // end security check
-    //curl -X POST -H "Content-Type: application/json" -d '{"language": "en"}' http://192.168.1.171:3000/rest/POST/setLanguage
+    //curl -X POST -H "Content-Type: application/json" -d '{"language": "en"}' https://8080-cs-250507813358-default.cs-us-east1-vpcf.cloudshell.dev/rest/POST/setLanguage
+    //https://8080-cs-250507813358-default.cs-us-east1-vpcf.cloudshell.dev/authentication/googleLogin
     
     const decodedPayload = jwt.verify(jwtToken, jwtSecret);
     const selectedLanguage = req.body.language;
