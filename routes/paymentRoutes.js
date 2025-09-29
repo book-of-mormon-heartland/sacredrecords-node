@@ -141,7 +141,6 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
 
 paymentRoutes.post('/createSubscription', async (req, res) => {
   console.log("In Subscription intent");
-  let increment = 1;
   const { payment_method_id } = req.body;
   //console.log("amt: " + req.body.amount);
   //begin security check
@@ -154,7 +153,6 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
-  increment = 2;
 
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
@@ -164,17 +162,14 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
   const priceFromSearch = await stripeClient.prices.search({
     query: 'metadata[\'name\']:\'quetzal-condor-subscription\'',
   });
-increment = 3;
 
 
-  console.log("priceFromSearch");
   let priceId = priceFromSearch.data[0].id 
   
   const customerSearch = await stripeClient.customers.search({
     query: 'metadata[\'internal_user_id\']:\''+ userId + '\'',
   });
   let customerId = "";
-increment = 4;
 
   if(customerSearch.data.length==0) { 
     console.log("need to create the customer");
@@ -186,16 +181,14 @@ increment = 4;
       },
         // Add payment method and other details here
     });
-    increment = 5;
 
     console.log("customer did not exist - created new one");
     customerId = customer.id; // This is what you need
   } else {
     console.log("customer already exists");
     customerId = customerSearch.data[0].id;
-    increment = 6;
 
-    await stripe.customers.update(customerId, {
+    await stripeClient.customers.update(customerId, {
         invoice_settings: {
             default_payment_method: payment_method_id,
         },
@@ -209,7 +202,6 @@ increment = 4;
 
   console.log("priceId: " + priceId );
   console.log("customerId: " + customerId);
-increment = 7;
 
   try {
       const subscription = await stripeClient.subscriptions.create({
@@ -228,25 +220,18 @@ increment = 7;
         expand: ['latest_invoice.payment_intent'], 
       });
 
-      // Check for the payment intent existence (important for robustness)
-      //console.log("subscription");
-      //console.log(subscription);
-increment = 8;
-
+ 
       const paymentIntent = subscription.latest_invoice?.payment_intent;
       if (!paymentIntent) {
           throw new Error("Stripe did not return a PaymentIntent. Check your customer and price IDs.");
       }
-      increment = 9;
 
       const clientSecret = paymentIntent.client_secret;
       console.log(clientSecret);
-      increment = 10;
 
       return res.json({
         message:"success",
         clientSecret: clientSecret,
-        increment: increment
       });
       
   } catch (e) {
@@ -255,7 +240,6 @@ increment = 8;
 
       return res.status(400).json({
         error: e,
-        increment: increment
       });
   }
 
