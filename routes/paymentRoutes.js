@@ -77,31 +77,28 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
   let user = await getUser(userId);
+  let userName = user.name;
   let userEmail = user.email;
   console.log(userEmail);
 
   const customers = await stripeClient.customers.search({
     query: 'email:\''+ userEmail +'\'',
   });
-  console.log("customerSearch");
-  console.log(customers);
-  let customerId = customers.data[0].id;
-  console.log("customerId: " + customerId);
+  
+  let customerId;
+
   try {
-    
-    if(customers.data[0].id.length==0) { 
-      console.log("need to create the customer");
+    if(customers.length>1) {
+      customerId = customers.data[0].id;
+    } else {
       let customer = await stripeClient.customers.create({
         email: userEmail,
-        name: user.name,
+        name: userName,
         metadata: {
             internal_user_id: userId
         }
-      });    
-      console.log("customer did not exist - created new one");
-      customerId = customer.id; // This is what you need
-    } else {
-      console.log("customer already exists");
+      });
+      customerId = customer.id;
     }
   } catch (e) {
     console.log("error in customer search");
@@ -109,6 +106,10 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
     return res.status(400).json({ error: e.message });
   }
   console.log("customerId: " + customerId);
+  
+  if(customerId===undefined) {
+    return res.status(400).json({ error: "no customer id" });
+  }
    // 2. Create the SetupIntent
   try {
     const setupIntent = await stripeClient.setupIntents.create({
