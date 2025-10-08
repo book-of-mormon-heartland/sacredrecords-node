@@ -113,11 +113,12 @@ export const  getBook = async( bookId ) => {
   return "";
 }
 
-export const createBookmark = async( userId, bookId, bookTitle, chapterId, chapterTitle, positionY ) => {
+export const createBookmark = async( userId, bookId, bookTitle, bookCategory, chapterId, chapterTitle, positionY ) => {
   let bookmark = {
     userId: userId,
     bookId: bookId,
     bookTitle: bookTitle,
+    bookCategory: bookCategory,
     chapterId: chapterId,
     chapterTitle: chapterTitle,
     positionY: positionY

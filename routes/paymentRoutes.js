@@ -8,21 +8,23 @@ import { getUserPurchases, addPurchase, getUser, updateUser } from "../database/
 const jwtSecret = process.env.JWT_SECRET;
 
 const DEV_SK = process.env.DEV_SK;
-const DEV_PK = process.env.DEV_PK;
-const DEV_QUETZAL_CONDOR_PRICE_ID = process.env.DEV_QUETZAL_CONDOR_PRICE_ID;
+const STAG_SK = process.env.STAG_SK;
 const PROD_SK = process.env.PROD_SK;
-const PROD_PK = process.env.PROD_PK;
-const PROD_QUETZAL_CONDOR_PRICE_ID = process.env.PROD_QUETZAL_CONDOR_PRICE_ID;
+
+//const DEV_PK = process.env.DEV_PK;
+//const DEV_QUETZAL_CONDOR_PRICE_ID = process.env.DEV_QUETZAL_CONDOR_PRICE_ID;
+//const PROD_PK = process.env.PROD_PK;
+//const PROD_QUETZAL_CONDOR_PRICE_ID = process.env.PROD_QUETZAL_CONDOR_PRICE_ID;
 
 let SK = "";
 let QUETZAL_CONDOR_PRICE_ID = "";
 
 if(process.env.NODE_ENV && process.env.NODE_ENV==="production") {
   SK =  process.env.PROD_SK;
-  QUETZAL_CONDOR_PRICE_ID =  process.env.PROD_QUETZAL_CONDOR_PRICE_ID;
+} else if(process.env.NODE_ENV && process.env.NODE_ENV==="staging") {
+  SK =  process.env.STAG_SK;
 } else {
   SK =  process.env.DEV_SK;
-  QUETZAL_CONDOR_PRICE_ID =  process.env.DEV_QUETZAL_CONDOR_PRICE_ID;
 }
 
 
@@ -176,8 +178,17 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
       query: "metadata[\"name\"]:\"quetzal-condor-subscription\""
     });
     console.log(productFromSearch);
-    let productId = productFromSearch.data[0].id;
-    let priceId = productFromSearch.data[0].default_price;
+    let productId;
+    let priceId;
+    try {
+      productId = productFromSearch.data[0].id;
+      priceId = productFromSearch.data[0].default_price;
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+        error: e.message,
+      });
+    }
 
     const paymentMethods = await stripeClient.paymentMethods.list({
       type: 'card',
@@ -185,8 +196,20 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
       customer: customerId,
     });
 
-    const paymentMethodId = paymentMethods.data[0].id;
-    const paymentMethod = paymentMethods.data[0];
+    let paymentMethodId;
+    let paymentMethod;
+    
+    try {
+      paymentMethodId = paymentMethods.data[0].id;
+      paymentMethod = paymentMethods.data[0];
+
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({
+        error: e.message,
+      });
+    }
+    
     await stripeClient.customers.update(customerId, {
         invoice_settings: {
             default_payment_method: paymentMethodId,

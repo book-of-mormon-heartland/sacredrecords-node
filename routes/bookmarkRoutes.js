@@ -25,7 +25,12 @@ bookmarkRoutes.post('/createBookmark', async (req, res) => {
   let book = await getBook(bookId);
   let toRemove = userId+"-"+req.body.bookId;
   const removeMessage = await removePreviousBookmark( toRemove );
-  const addMessage = await createBookmark( userId, req.body.bookId, book.title, req.body.chapterId, req.body.chapterTitle, req.body.positionY );
+  // we must get the category from the book and add it in.
+
+
+
+
+  const addMessage = await createBookmark( userId, req.body.bookId, book.title, book.category, req.body.chapterId, req.body.chapterTitle, req.body.positionY );
 
   return res.json(
     JSON.stringify({
