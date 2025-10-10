@@ -298,10 +298,13 @@ paymentRoutes.post('/createOrder', async (req, res) => {
 paymentRoutes.get('/paymentCallback', async (req, res) => {
   console.log("in payment callback");
   await addToLogs("made it to payment Callback");
-  await addToLogs(req.headers);
+  const headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
+  //console.log('Request Headers as String:');
+  //console.log(headersString);
+  await addToLogs(headersString);
   
   const sig = req.headers['stripe-signature'];  
-  console.log(sig);
+  //console.log(sig);
 
   let event;
   try {
