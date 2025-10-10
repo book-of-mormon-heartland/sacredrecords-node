@@ -3,7 +3,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 export const paymentRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
-import { getUserPurchases, addPurchase, getUser, updateUser } from "../database/database.js"; // Import the database module
+import { getUserPurchases, addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent } from "../database/database.js"; // Import the database module
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -44,7 +44,8 @@ paymentRoutes.post('/intent', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
-  console.log()
+  console.log("This is the sk");
+  console.log(SK);
   try {
     const paymentIntent = await stripeClient.paymentIntents.create({
       amount: req.body.amount,
@@ -75,6 +76,9 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
   }
   // end security check
   console.log("token fine - continuing");
+  console.log("This is the sk");
+  console.log(SK);
+
   // end security check
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
@@ -113,6 +117,7 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
     return res.status(400).json({ error: "no customer id" });
   }
    // 2. Create the SetupIntent
+  console.log("Going for setup intent");
   try {
     const setupIntent = await stripeClient.setupIntents.create({
       // Required: Link the SetupIntent to a Customer
@@ -287,30 +292,33 @@ paymentRoutes.post('/createOrder', async (req, res) => {
   }
 });
 
-/*
-paymentRoutes.post('/applyDiscount', async (req, res) => {
-  console.log("In Apply Discount");
-  //begin security check
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).send('Unauthorized: No token provided or malformed.');
-  }
-  const jwtToken = authHeader.split(' ')[1];
-  if (!checkToken(jwtToken)) {
-      return res.status(401).send('Unauthorized: Token is invalid or expired.');
-  }
-  // end security check
-  console.log(req);
-  try {
-    console.log("Passed the security check");
-    console.log("Ready to create order data");
-    return res.json({
-      message:"success"
-    } );
-  } catch (e) {
-    return res.status(400).json({
-      error: e.message,
-    });
-  }
-});
+/** 
+* Used for ios payments
 */
+paymentRoutes.get('/paymentCallback', async (req, res) => {
+  const sig = req.headers['stripe-signature'];  
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, SK);
+    addPaymentEvent(sig, event);
+  } catch (err) {
+    console.log(`Webhook error: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the payment intent event
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    addPaymentIntent(sig, paymentIntent);
+    console.log('PaymentIntent was successful!', paymentIntent);
+    // Process successful payment (e.g., update your database)
+  } else if (event.type === 'payment_intent.failed') {
+    const paymentIntent = event.data.object;
+    addPaymentIntent(sig, paymentIntent);
+    console.log('PaymentIntent failed.', paymentIntent);
+    // Handle failed payment
+  }
+
+  // Return a 200 response to acknowledge receipt of the event
+  res.json({ received: true });
+});

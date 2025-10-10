@@ -331,3 +331,42 @@ export const removeToken = async( userid ) => {
   }
 }
 
+
+export const addIosCallback = async(  ) => {
+  const docRef = db.collection('ioscallbacks').doc(userid);
+  try {
+    await docRef.set({
+      token: token,
+      userId: userid,
+    });
+    console.log('token successfully added!');
+  } catch (error) {
+    console.error('Error adding token:', error);
+  }
+}
+
+export const addPaymentEvent= async( sig, paymentEvent ) => {
+  const docRef = db.collection('paymentevents').doc(sig);
+  try {
+    await docRef.set({
+      sig: sig,
+      event: paymentEvent,
+    });
+    console.log('paymentevent successfully added!');
+  } catch (error) {
+    console.error('Error adding paymentevent: ', error);
+  }
+}
+
+export const addPaymentIntent= async( sig, paymentIntent ) => {
+  const docRef = db.collection('paymentintents').doc(sig);
+  try {
+    await docRef.set({
+      sig: sig,
+      event: paymentIntent,
+    });
+    console.log('paymentIntent successfully added!');
+  } catch (error) {
+    console.error('Error adding paymentIntent:', error);
+  }
+}
