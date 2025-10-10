@@ -3,7 +3,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 export const paymentRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
-import { getUserPurchases, addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent } from "../database/database.js"; // Import the database module
+import { getUserPurchases, addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs } from "../database/database.js"; // Import the database module
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -303,22 +303,26 @@ paymentRoutes.get('/paymentCallback', async (req, res) => {
     addPaymentEvent(sig, event);
   } catch (err) {
     console.log(`Webhook error: ${err.message}`);
+    addToLogs(err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   // Handle the payment intent event
-  if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object;
-    addPaymentIntent(sig, paymentIntent);
-    console.log('PaymentIntent was successful!', paymentIntent);
-    // Process successful payment (e.g., update your database)
-  } else if (event.type === 'payment_intent.failed') {
-    const paymentIntent = event.data.object;
-    addPaymentIntent(sig, paymentIntent);
-    console.log('PaymentIntent failed.', paymentIntent);
-    // Handle failed payment
+  try {
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      addPaymentIntent(sig, paymentIntent);
+      console.log('PaymentIntent was successful!', paymentIntent);
+      // Process successful payment (e.g., update your database)
+    } else if (event.type === 'payment_intent.failed') {
+      const paymentIntent = event.data.object;
+      addPaymentIntent(sig, paymentIntent);
+      console.log('PaymentIntent failed.', paymentIntent);
+      // Handle failed payment
+    }
+  } catch (error) {
+    addToLogs(error)
   }
-
   // Return a 200 response to acknowledge receipt of the event
   res.json({ received: true });
 });

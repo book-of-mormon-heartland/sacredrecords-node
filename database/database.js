@@ -332,21 +332,11 @@ export const removeToken = async( userid ) => {
 }
 
 
-export const addIosCallback = async(  ) => {
-  const docRef = db.collection('ioscallbacks').doc(userid);
-  try {
-    await docRef.set({
-      token: token,
-      userId: userid,
-    });
-    console.log('token successfully added!');
-  } catch (error) {
-    console.error('Error adding token:', error);
-  }
-}
-
 export const addPaymentEvent= async( sig, paymentEvent ) => {
-  const docRef = db.collection('paymentevents').doc(sig);
+  const timestamp = Date.now();
+  console.log(timestamp);
+
+  const docRef = db.collection('paymentevents').doc(timestamp);
   try {
     await docRef.set({
       sig: sig,
@@ -359,7 +349,25 @@ export const addPaymentEvent= async( sig, paymentEvent ) => {
 }
 
 export const addPaymentIntent= async( sig, paymentIntent ) => {
-  const docRef = db.collection('paymentintents').doc(sig);
+  const timestamp = Date.now();
+  console.log(timestamp);
+
+  const docRef = db.collection('paymentintents').doc(timestamp);
+  try {
+    await docRef.set({
+      sig: sig,
+      event: paymentIntent,
+    });
+    console.log('paymentIntent successfully added!');
+  } catch (error) {
+    console.error('Error adding paymentIntent:', error);
+  }
+}
+
+export const addToLogs= async( logEntry ) => {
+  const timestamp = Date.now();
+  console.log(timestamp);
+  const docRef = db.collection('logs').doc(timestamp);
   try {
     await docRef.set({
       sig: sig,
