@@ -296,24 +296,28 @@ paymentRoutes.post('/createOrder', async (req, res) => {
 * Used for ios payments
 */
 paymentRoutes.get('/paymentCallback', async (req, res) => {
-  console.log("in payment callback");
+  //console.log("in payment callback");
   await addToLogs("made it to payment Callback");
   
   await addToLogs("about to get the headers string");
+  let headersString = "";
+   // null, 2 for pretty-printing
   try {
-    const headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
+    headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
   } catch (error) {
+    headersString = "no headers";
     await addToLogs(error.message);
   }
   //console.log('Request Headers as String:');
   //console.log(headersString);
+  await addToLogs("next is headerstring");
+  
   await addToLogs(headersString);
   
-  const sig = req.headers['stripe-signature'];  
-  //console.log(sig);
-
+  let sig;
   let event;
   try {
+    sig = req.headers['stripe-signature'];  
     event = stripe.webhooks.constructEvent(req.body, sig, SK);
     addPaymentEvent(sig, event);
   } catch (err) {
