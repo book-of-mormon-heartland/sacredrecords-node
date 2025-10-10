@@ -293,12 +293,11 @@ paymentRoutes.post('/createOrder', async (req, res) => {
 });
 
 /** 
-* Used for ios payments
+* Used for ios payments.  but appears not no really do anything.  in fact it is not even invoked.
 */
 paymentRoutes.get('/paymentCallback', async (req, res) => {
   //console.log("in payment callback");
   await addToLogs("made it to payment Callback");
-  
   await addToLogs("about to get the headers string");
   let headersString = "";
    // null, 2 for pretty-printing
@@ -311,7 +310,6 @@ paymentRoutes.get('/paymentCallback', async (req, res) => {
   //console.log('Request Headers as String:');
   //console.log(headersString);
   await addToLogs("next is headerstring");
-  
   await addToLogs(headersString);
   
   let sig;
