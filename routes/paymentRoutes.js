@@ -298,7 +298,13 @@ paymentRoutes.post('/createOrder', async (req, res) => {
 paymentRoutes.get('/paymentCallback', async (req, res) => {
   console.log("in payment callback");
   await addToLogs("made it to payment Callback");
-  const headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
+  
+  await addToLogs("about to get the headers string");
+  try {
+    const headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
+  } catch (error) {
+    await addToLogs(error.message);
+  }
   //console.log('Request Headers as String:');
   //console.log(headersString);
   await addToLogs(headersString);
