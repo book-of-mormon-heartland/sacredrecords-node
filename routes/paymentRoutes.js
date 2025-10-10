@@ -296,7 +296,12 @@ paymentRoutes.post('/createOrder', async (req, res) => {
 * Used for ios payments
 */
 paymentRoutes.get('/paymentCallback', async (req, res) => {
+  console.log("in payment callback");
+  await addToLogs("made it to payment Callback");
+
   const sig = req.headers['stripe-signature'];  
+  console.log(sig);
+  
   let event;
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, SK);
