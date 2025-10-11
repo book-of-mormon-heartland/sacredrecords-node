@@ -8,7 +8,7 @@ import { db } from "../database/database.js"; // Import the database module
 const jwtSecret = process.env.JWT_SECRET;
 
 chapterRoutes.get('/chapters', (req, res) => {
-  console.log("chapters/chapters called");
+  //console.log("chapters/chapters called");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,7 +23,7 @@ chapterRoutes.get('/chapters', (req, res) => {
   //console.log("chapters/chapters called 2");
   //console.log(req);
   let parent = req.query.parent;
-  console.log("parent " + parent);
+  //console.log("parent " + parent);
   
   db.collection('chapters').where("parent", "==", parent).orderBy("order", "asc").get()
     .then(snapshot => {
@@ -56,7 +56,7 @@ chapterRoutes.get('/chapterContentText', (req, res) => {
   }
   // end security check
 
-  console.log('/chapterContentText');
+ // console.log('/chapterContentText');
   let chapterId = req.query.id;
   db.collection('chaptertext').where("id", "==", chapterId).orderBy("order", "asc").get()
     .then(snapshot => {

@@ -44,8 +44,8 @@ paymentRoutes.post('/intent', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
-  console.log("This is the sk");
-  console.log(SK);
+  //console.log("This is the sk");
+  //console.log(SK);
   try {
     const paymentIntent = await stripeClient.paymentIntents.create({
       amount: req.body.amount,
@@ -64,7 +64,7 @@ paymentRoutes.post('/intent', async (req, res) => {
 });
 
 paymentRoutes.post('/setupIntent', async (req, res) => {
-  console.log("In setupIntent");
+  //console.log("In setupIntent");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -75,9 +75,9 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
-  console.log("token fine - continuing");
-  console.log("This is the sk");
-  console.log(SK);
+  //console.log("token fine - continuing");
+  //console.log("This is the sk");
+  //console.log(SK);
 
   // end security check
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
@@ -85,7 +85,7 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
   let user = await getUser(userId);
   let userName = user.name;
   let userEmail = user.email;
-  console.log(userEmail);
+  //console.log(userEmail);
 
   const customers = await stripeClient.customers.search({
     query: 'email:\''+ userEmail +'\'',
@@ -111,13 +111,13 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
     console.log(e);
     return res.status(400).json({ error: e.message });
   }
-  console.log("customerId: " + customerId);
+  //console.log("customerId: " + customerId);
   
   if(customerId===undefined) {
     return res.status(400).json({ error: "no customer id" });
   }
    // 2. Create the SetupIntent
-  console.log("Going for setup intent");
+  //console.log("Going for setup intent");
   try {
     const setupIntent = await stripeClient.setupIntents.create({
       // Required: Link the SetupIntent to a Customer
@@ -133,8 +133,8 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
           enabled: true,
       },
     });
-    console.log("setupIntent"); 
-    console.log(setupIntent);
+    //console.log("setupIntent"); 
+    //console.log(setupIntent);
     // 3. Send the essential client secret back to your React Native app
     // The client secret is what your React Native app will use to confirm the SetupIntent.
     return res.json({
@@ -175,14 +175,14 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
     const customers = await stripeClient.customers.search({
       query: 'email:\''+ userEmail +'\'',
     });
-    console.log("customerSearch");
-    console.log(customers);
+    //console.log("customerSearch");
+    //console.log(customers);
     let customerId = customers.data[0].id;
 
     const productFromSearch = await stripeClient.products.search({
       query: "metadata[\"name\"]:\"quetzal-condor-subscription\""
     });
-    console.log(productFromSearch);
+    //console.log(productFromSearch);
     let productId;
     let priceId;
     try {
@@ -319,7 +319,7 @@ paymentRoutes.get('/paymentCallback', async (req, res) => {
     event = stripe.webhooks.constructEvent(req.body, sig, SK);
     addPaymentEvent(sig, event);
   } catch (err) {
-    console.log(`Webhook error: ${err.message}`);
+    //console.log(`Webhook error: ${err.message}`);
     addToLogs(err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
@@ -329,12 +329,12 @@ paymentRoutes.get('/paymentCallback', async (req, res) => {
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object;
       addPaymentIntent(sig, paymentIntent);
-      console.log('PaymentIntent was successful!', paymentIntent);
+      //console.log('PaymentIntent was successful!', paymentIntent);
       // Process successful payment (e.g., update your database)
     } else if (event.type === 'payment_intent.failed') {
       const paymentIntent = event.data.object;
       addPaymentIntent(sig, paymentIntent);
-      console.log('PaymentIntent failed.', paymentIntent);
+      //console.log('PaymentIntent failed.', paymentIntent);
       // Handle failed payment
     }
   } catch (error) {

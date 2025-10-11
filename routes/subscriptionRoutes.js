@@ -3,13 +3,12 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 export const subscriptionRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
-import { db, getUserSubscriptions, addOrUpdateUser, getUser } from "../database/database.js"; // Import the database module
+import { db, getUserSubscriptions, addOrUpdateUser, getUser, getSubscriptionPrice, addSubscription } from "../database/database.js"; // Import the database module
 
 const jwtSecret = process.env.JWT_SECRET;
 
-
 subscriptionRoutes.get('/getSubscriptions', async (req, res) => {
-  console.log("in getSubscriptions")
+  //console.log("in getSubscriptions")
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -32,7 +31,7 @@ subscriptionRoutes.get('/getSubscriptions', async (req, res) => {
 });
 
 subscriptionRoutes.post('/subscribe', async (req, res) => {
-  console.log("in subscribe")
+  //console.log("in subscribe")
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -57,7 +56,7 @@ subscriptionRoutes.post('/subscribe', async (req, res) => {
 });
 
 subscriptionRoutes.post('/checkIfSubscribed', async (req, res) => {
-  console.log("in checkIfSubscribed");
+  //console.log("in checkIfSubscribed");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -90,7 +89,7 @@ subscriptionRoutes.post('/checkIfSubscribed', async (req, res) => {
 });
 
 subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
-  console.log("in finalizePurchase");
+  //console.log("in finalizePurchase");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -101,9 +100,7 @@ subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
       return res.status(500).send('Unauthorized: Token is invalid or expired.');
   }
   // end security check
-  let subscriptionName = req.body.subscription;
-  console.log(subscriptionName);
-  
+  let subscriptionName = req.body.subscription;  
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
   let user = await getUser(userId);
@@ -117,10 +114,12 @@ subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
     userSubscriptions.push(subscriptionName);
     user.subscriptions=userSubscriptions;
     await addOrUpdateUser(user);
-    console.log("Subscription should have been added now.");
+    //console.log("Subscription should have been added now.");
     //create the subscription in the Subscriptions table.
     isSubscribed=true;
-    console.log("Need to make the db entry for the subscription")
+    let monthlyPrice = await getSubscriptionPrice('quetzal-condor')
+    await addSubscription( userId, user.name, user.email, subscriptionName, monthlyPrice)
+    //console.log("Need to make the db entry for the subscription")
   }
   
 

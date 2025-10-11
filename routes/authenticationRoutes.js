@@ -14,14 +14,14 @@ const jwtSecret = process.env.JWT_SECRET;
 
 
 authenticationRoutes.get('/googleLogin', (req, res) => {
-  console.log("Google Login Here");
+  //console.log("Google Login Here");
   return res.json({
         message: "valid-token",
       });
 });
 
 authenticationRoutes.post('/googleLogin', (req, res) => {
-  console.log("Google Login Here from post");
+  //console.log("Google Login Here from post");
   // retrieve the token
   const token = req.body.token;
   const user = req.body.user;
@@ -100,31 +100,31 @@ authenticationRoutes.post('/refreshJwtToken', (req, res) => {
   }
 
   const jwtToken = authHeader.split(' ')[1];
-  console.log("This is the jwtToken");
-  console.log(jwtToken);
-  console.log("is token valid? " + checkIfTokenValid(jwtToken, jwtSecret));
+  //console.log("This is the jwtToken");
+  //console.log(jwtToken);
+  //console.log("is token valid? " + checkIfTokenValid(jwtToken, jwtSecret));
   if (!checkIfTokenValid(jwtToken, jwtSecret)) {
-    console.log("Token Expired");
+    //console.log("Token Expired");
     // The token is expired.  Lets check if the authToken is expired.
     let refreshToken = req.body.refreshToken;
     let userId = req.body.userId;
-    console.log("This is the refreshToken");
-    console.log(refreshToken);
+    //console.log("This is the refreshToken");
+    //console.log(refreshToken);
     if(!checkIfTokenValid(refreshToken, jwtSecret)) {
       // if expired return an error message.
-      console.log("expired");
+      //console.log("expired");
       return res.status(500).send('Unauthorized: RefreshToken is expired.');
     } else {
       const isMatch = checkTokenUserMatch(refreshToken, userId);
-      console.log("this is isMatch");
-      console.log(isMatch);
+      //console.log("this is isMatch");
+      //console.log(isMatch);
       if(isMatch) {
-        console.log("Create the new one now.");
-        console.log("userId " + userId);
-        console.log("jwtSecret " + jwtSecret);
+        //console.log("Create the new one now.");
+        //console.log("userId " + userId);
+        //console.log("jwtSecret " + jwtSecret);
         let newJwtToken = jwt.sign({ userId: userId }, jwtSecret, { expiresIn: '1h' });
-        console.log("oldJwtToken:" + jwtToken);
-        console.log("newJwtToken:" + newJwtToken);
+        //console.log("oldJwtToken:" + jwtToken);
+        //console.log("newJwtToken:" + newJwtToken);
         return res.json(
             JSON.stringify({
                 "message": "update-jwt-token",

@@ -162,6 +162,25 @@ export const  getUserPurchases = async( userId) => {
   return "";
 }
 
+
+export const getSubscriptionPrice = async( id ) => {
+  const docRef = db.collection('subscriptiondetails').doc(id);
+  try {
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      // The document exists, so get its data
+      const data = docSnap.data();
+      return data.monthlyPrice;
+    } else {
+      return 0;
+    }
+  } catch (error) {
+    console.error("Error getting document:", error);
+  }
+  return 0;
+
+}
+
 export const getUserSubscriptions = async (userId) => {
   const docRef = db.collection('users').doc(userId);
   try {
@@ -203,6 +222,27 @@ export const  addPurchase = async( userId, name, email, bookId, bookTitle, code,
     await  docRef.set(purchase);
   } catch (error) {
     console.error('Error adding purchase:', error);
+  }
+}
+
+export const  addSubscription = async( userId, name, email, product, monthlyPrice) => {
+  let now = new Date();
+  let systemTime = now.toISOString();
+  const readableDate = now.toDateString();
+  const docRef = db.collection('subscriptions').doc(systemTime);
+  try {
+    let subscription = {
+      userId: userId,
+      name: name,
+      email: email,
+      product: product,
+      monthlyPrice: monthlyPrice,
+      time : systemTime,
+      date : readableDate
+    }
+    await  docRef.set(subscription);
+  } catch (error) {
+    console.error('Error adding subscription:', error);
   }
 }
 

@@ -8,7 +8,7 @@ import { db, getBook, createBookmark, removePreviousBookmark } from "../database
 const jwtSecret = process.env.JWT_SECRET;
 
 bookRoutes.get('/bookshelf', (req, res) => {
-  console.log("get bookshelf called")
+  //console.log("get bookshelf called")
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -85,7 +85,7 @@ bookRoutes.get('/books', (req, res) => {
   }
   // end security check
 
-  console.log("books/books called");
+  //console.log("books/books called");
   db.collection('books').where("category", "!=", "quetzal-condor").where("isParent", "==", true).where("visible", "==", true).orderBy("order", "asc").get()
     .then(snapshot => {
       let books = [];
@@ -106,7 +106,7 @@ bookRoutes.get('/books', (req, res) => {
 
 
 bookRoutes.get('/getBooksByCategory', async (req, res) => {
-  console.log("getBooksByCategory called");
+  //console.log("getBooksByCategory called");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -118,7 +118,7 @@ bookRoutes.get('/getBooksByCategory', async (req, res) => {
   }
   // end security check
   
-  console.log("getBooksByCategory security passed");
+  //console.log("getBooksByCategory security passed");
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId=decodedPayload.userId;
   let category = req.query.category;
@@ -211,7 +211,7 @@ bookRoutes.get('/bookForReview', (req, res) => {
 
 
 bookRoutes.get('/populateStore', (req, res) => {
-  console.log("/populateStore called");
+  //console.log("/populateStore called");
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

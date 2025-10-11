@@ -27,9 +27,6 @@ bookmarkRoutes.post('/createBookmark', async (req, res) => {
   const removeMessage = await removePreviousBookmark( toRemove );
   // we must get the category from the book and add it in.
 
-
-
-
   const addMessage = await createBookmark( userId, req.body.bookId, book.title, book.category, req.body.chapterId, req.body.chapterTitle, req.body.positionY );
 
   return res.json(
@@ -39,7 +36,7 @@ bookmarkRoutes.post('/createBookmark', async (req, res) => {
 });
 
 bookmarkRoutes.get('/getBookmarks', async (req, res) => {
-  console.log("getBookmarks called")
+  //console.log("getBookmarks called")
   //begin security check
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
