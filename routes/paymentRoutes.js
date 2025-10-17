@@ -292,6 +292,79 @@ paymentRoutes.post('/createOrder', async (req, res) => {
   }
 });
 
+paymentRoutes.post('/getPaymentIntent', async (req, res) => {
+  //let price = 2000;
+  //console.log("in getPaymentIntent");
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+ const jwtToken = authHeader.split(' ')[1];
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId = decodedPayload.userId;
+  let user = await getUser(userId);
+  let userName = user.name;
+  let userEmail = user.email;
+  //console.log(userEmail);
+  let price = req.body.amount;
+
+  const customers = await stripeClient.customers.search({
+    query: 'email:\''+ userEmail +'\'',
+  });
+  
+  let customerId;
+
+  try {
+    if(customers.length>1) {
+      customerId = customers.data[0].id;
+    } else {
+      let customer = await stripeClient.customers.create({
+        email: userEmail,
+        name: userName,
+        metadata: {
+            internal_user_id: userId
+        }
+      });
+      customerId = customer.id;
+    }
+  } catch (e) {
+    console.log("error in customer search");
+    console.log(e);
+    return res.status(400).json({ error: e.message });
+  }
+
+
+  const ephemeralKey = await stripeClient.ephemeralKeys.create(
+    { customer: customerId },
+    { apiVersion: stripeClient.getApiField('version') } // Must match Stripe API version used in client SDK
+  );
+
+
+
+  const paymentIntent = await stripeClient.paymentIntents.create({
+      amount: price,
+      currency: 'usd',
+      customer: customerId, // <-- IMPORTANT
+      automatic_payment_methods: { enabled: true },
+    });
+
+
+  return res.json({
+      message: "success",
+      customerId: customerId,
+      name: userName,
+      email: userEmail,
+      clientSecret: paymentIntent.client_secret,
+      ekSecret: ephemeralKey.secret,
+    });
+
+});
+
+
 /** 
 * Used for ios payments.  but appears not no really do anything.  in fact it is not even invoked.
 */

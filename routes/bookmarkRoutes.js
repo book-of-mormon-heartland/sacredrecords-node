@@ -96,3 +96,36 @@ bookmarkRoutes.get('/getBookmark', async (req, res) => {
   return res.json(bookmark);
 
 });
+
+bookmarkRoutes.post('/removeBookmark', async (req, res) => {
+  //console.log("removeBookmark");
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+  const jwtToken = authHeader.split(' ')[1];
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  // end security check
+  let bookmark = {};
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId=decodedPayload.userId;
+  let bookId = req.body.bookId;
+
+  const docRef = db.collection('bookmarks').doc(userId + "-" + bookId);
+  try {
+    await docRef.delete();
+  } catch( err ) {
+    console.log(err);
+    bookmark = {
+      message: "failure"
+    }
+    return res.json(bookmark);
+  }
+  bookmark = {
+    message: "success"
+  }
+  return res.json(bookmark);
+});

@@ -31,7 +31,7 @@ handsomeLake.get("/addHandsomeLake", function (req, res) {
     }
     addBook(book);
 
-*/
+
     chapter = {
         id: "handsome-lake-cover-en",
         title: "Cover Images",
@@ -91,6 +91,176 @@ handsomeLake.get("/addHandsomeLake", function (req, res) {
         ],
     }
     addChapterText(chapter);
+*/
+    chapter = {
+        id: "handsome-lake-chapter-1-en",
+        title: "Chapter 1",
+        subTitle: "Handsome Lake",
+        parent: "handsome-lake-en",
+        order: 3,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-1-en",
+        title: "Chapter 1",
+        subTitle: "Handsome Lake",
+        parent: "handsome-lake-en",
+        order: 3,
+        visible: true,
+        previousChapter: "handsome-lake-intro-en",
+        followingChapter: "handsome-lake-chapter-2-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+    chapter = {
+        id: "handsome-lake-chapter-2-en",
+        title: "Chapter 2",
+        subTitle: "Present Effects of Handsome Lakes Teaching",
+        parent: "handsome-lake-en",
+        order: 4,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-2-en",
+        title: "Chapter 2",
+        subTitle: "Present Effects of Handsome Lake's Teaching",
+        parent: "handsome-lake-en",
+        order: 4,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-1-en",
+        followingChapter: "handsome-lake-chapter-3-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+    chapter = {
+        id: "handsome-lake-chapter-3-en",
+        title: "Chapter 3",
+        subTitle: "How the white race came to America and why the Gaiwho became a necessity.",
+        parent: "handsome-lake-en",
+        order: 5,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-3-en",
+        title: "Chapter 3",
+        subTitle: "How the white race came to America and why the Gaiwho became a necessity.",
+        parent: "handsome-lake-en",
+        order: 5,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-2-en",
+        followingChapter: "handsome-lake-chapter-4-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+    chapter = {
+        id: "handsome-lake-chapter-4-en",
+        title: "Chapter 4",
+        subTitle: "Now this is Gaiwho",
+        parent: "handsome-lake-en",
+        order: 6,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-4-en",
+        title: "Chapter 4",
+        subTitle: "Now this is Gaiwho",
+        parent: "handsome-lake-en",
+        order: 6,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-3-en",
+        followingChapter: "handsome-lake-chapter-5-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+
+    chapter = {
+        id: "handsome-lake-chapter-5-en",
+        title: "Chapter 5",
+        subTitle: "The Great Message",
+        parent: "handsome-lake-en",
+        order: 7,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-5-en",
+        title: "Chapter 5",
+        subTitle: "The Great Message",
+        parent: "handsome-lake-en",
+        order: 7,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-4-en",
+        followingChapter: "handsome-lake-chapter-6-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+    chapter = {
+        id: "handsome-lake-chapter-6-en",
+        title: "Chapter 6",
+        subTitle: "Field Notes and the Rites and Ceremonies of the Ganio'Dai'io Religion",
+        parent: "handsome-lake-en",
+        order: 8,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-6-en",
+        title: "Chapter 6",
+        subTitle: "",
+        parent: "handsome-lake-en",
+        order: 8,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-5-en",
+        followingChapter: "handsome-lake-chapter-7-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
+    chapter = {
+        id: "handsome-lake-chapter-7-en",
+        title: "Chapter 7",
+        subTitle: "Field Notes and the Rites and Ceremonies of the Ganio'Dai'io Religion",
+        parent: "handsome-lake-en",
+        order: 9,
+        visible: true
+    }
+    addChapter(chapter);
+    
+    chapter = {
+        id: "handsome-lake-chapter-7-en",
+        title: "Chapter 7",
+        subTitle: "Field Notes and the Rites and Ceremonies of the Ganio'Dai'io Religion",
+        parent: "handsome-lake-en",
+        order: 9,
+        visible: true,
+        previousChapter: "handsome-lake-chapter-6-en",
+        followingChapter: "handsome-lake-chapter-8-en",
+        content: [
+        ],
+    }
+    addChapterText(chapter);
+
 
 
     res.send("Handsome Lake Added");

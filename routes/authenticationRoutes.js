@@ -1,11 +1,13 @@
 import express from 'express';
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
-export const authenticationRoutes = express.Router();
+import jwkToPem from 'jwk-to-pem';
+import fetch from 'node-fetch';
 import { OAuth2Client } from 'google-auth-library';
-
 import { checkTokenUserMatch, checkIfTokenValid } from "../security/security.js";
-import { addOrUpdateUser, getUserLanguage, getUserPurchases, getUserSubscriptions } from "../database/database.js"; // Import the database module
+import { getUser, addOrUpdateUser, getUserLanguage, getUserPurchases, getUserSubscriptions } from "../database/database.js"; // Import the database module
+
+export const authenticationRoutes = express.Router();
 
 const GOOGLE_WEB_CLIENT_ID  = process.env.GOOGLE_WEB_CLIENT_ID;
 const GOOGLE_ANDROID_CLIENT_ID = process.env.GOOGLE_ANDROID_CLIENT_ID;
@@ -16,11 +18,11 @@ const jwtSecret = process.env.JWT_SECRET;
 authenticationRoutes.get('/googleLogin', (req, res) => {
   //console.log("Google Login Here");
   return res.json({
-        message: "valid-token",
+        message: "Hack Job",
       });
 });
 
-authenticationRoutes.post('/googleLogin', (req, res) => {
+authenticationRoutes.post('/googleLogin', async(req, res) => {
   //console.log("Google Login Here from post");
   // retrieve the token
   const token = req.body.token;
@@ -46,22 +48,21 @@ authenticationRoutes.post('/googleLogin', (req, res) => {
     }
     // Add or update the user.  Same thing here.
     //user.purchases=user.purchases || ['gospel-of-nicodemus-en', 'the-nephite-record-en', 'the-sacred-tree-en']
-    await addOrUpdateUser(user);
-    let language = await getUserLanguage(user.id);
-    let purchases = await getUserPurchases(user.id);
-    if(!purchases) {
-      // we are giving them a book for free.
-      purchases = ["the-sacred-tree-en"];
+    const userFromDatabase = await getUser(userid);
+    if(userFromDatabase?.id) {
+      //console.log("user is in the database - skip the rest");
+
+    } else {
+      // todo should be poplulated by the user OS.
+      let language = "en";
+      user.language=language;
+      let purchases = ["the-sacred-tree-en"];
       user.purchases = purchases;
-      await addOrUpdateUser(user);
-    }
-    let subscriptions = await getUserSubscriptions(user.id);
-    if(!subscriptions) {
-      // should be no subscriptions by default.
-      subscriptions = [];
+      let subscriptions = [];
       user.subscriptions = subscriptions;
       await addOrUpdateUser(user);
     }
+    let languageToReturn = await getUserLanguage(user.id);
 
     //console.log(purchases);
     // generate the jwt token.
@@ -72,14 +73,14 @@ authenticationRoutes.post('/googleLogin', (req, res) => {
     return res.json(
     JSON.stringify({
         "message": "Success",
-        "language": language,
+        "language": languageToReturn,
         "jwtToken": jwtToken,
         "refreshToken": refreshToken,
     }))
 
   }
   verify().catch((error) => {
-    console.log('Error verifying token:', error);
+    //console.log('Error verifying token:', error);
     return res.json(
       JSON.stringify({
         "message": error,
@@ -90,8 +91,142 @@ authenticationRoutes.post('/googleLogin', (req, res) => {
   });
 });
 
+
+const APPLE_KEYS_URL = 'https://appleid.apple.com/auth/keys';
+let cachedAppleKeys = null;
+
+// Fetch and cache Apple's public keys
+const  getAppleKeys = async ()  => {
+  if (cachedAppleKeys) return cachedAppleKeys;
+
+  const response = await fetch(APPLE_KEYS_URL);
+  if (!response.ok) {
+    throw new Error(`Unable to fetch Apple public keys: ${response.statusText}`);
+  }
+
+  const { keys } = await response.json();
+  cachedAppleKeys = keys;
+  return keys;
+}
+
+// Find the right key for the JWT header.kid
+const  getAppleKeyByKid = async (keys, kid) => {
+  return keys.find(key => key.kid === kid);
+}
+
+// Verify Apple ID token (JWT)
+const  verifyAppleToken = async(idToken, clientId) => {
+  try {
+    const decodedHeader = jwt.decode(idToken, { complete: true });
+    if (!decodedHeader) throw new Error('Invalid token');
+
+    const appleKeys = await getAppleKeys();
+    const appleKey = await getAppleKeyByKid(appleKeys, decodedHeader.header.kid);
+    //console.log("This is the appleKey");
+    //console.log(appleKey);
+    if (!appleKey) throw new Error('Apple public key not found for token');
+
+    const pem = jwkToPem(appleKey);
+
+    const verifiedToken = jwt.verify(idToken, pem, {
+      algorithms: ['RS256'],
+      issuer: 'https://appleid.apple.com',
+      audience: clientId, // should match your app's "Service ID" or bundle ID
+    });
+
+    // verifiedToken now contains claims like sub, email, etc.
+    return verifiedToken;
+  } catch (err) {
+    console.error('Apple token verification failed:', err.message);
+    throw err;
+  }
+}
+
+
+authenticationRoutes.post('/appleLogin', async (req, res) => {
+  //console.log("Google Login Here from post");
+  // retrieve the token
+  //console.log("appleLogin");
+  const familyName = req.body.familyName;
+  const givenName = req.body.givenName;
+  const name = familyName + " " + givenName;
+
+  const appleUserId = req.body.user;
+  const idToken = req.body.idToken;
+  const authorizationCode = req.body.authorizationCode;
+  const nonce = req.body.nonce;
+
+
+  let appleToken = await verifyAppleToken(idToken, "com.sacredrecords");
+  //console.log("appleToken");
+  //console.log(appleToken);
+  try {
+    let userId = appleToken.sub;
+    let email = appleToken.email;
+    // create the user object based on Google object.
+    // get the user object from the database.  If it does not exist, we create it.  if it does, we modify it.
+    let user = await getUser(userId);
+    let jwtToken = jwt.sign({ userId: userId }, jwtSecret, { expiresIn: '1h' });
+    let refreshToken = jwt.sign({ userId: userId }, jwtSecret, { expiresIn: '7d' });
+    //console.log("user from apple login");
+    //console.log(user);
+    if (user) {
+      //console.log("User Exists returning with update profile");
+      // user exists.  return tokens.
+      // "message": "updateProfile", if the user information is blank;
+      if(user.familyName=="" || user.givenName=="") {
+        let message = {
+            message: "updateProfile",
+            language: user.language,
+            user: user,
+            jwtToken: jwtToken,
+            refreshToken: refreshToken,
+        }
+        return res.json(message);
+        
+      } else {
+        //console.log("User Exists returning success");
+
+        let message = {
+          message: "success",
+          language: user.language,
+          user: user,
+          jwtToken: jwtToken,
+          refreshToken: refreshToken,
+        }
+        return res.json(message);
+      }
+
+    } else {
+      //console.log("User is not in the database.  We now can create it.");
+      user = {
+        email: email,
+        familyName: "",
+        givenName: "",
+        id: userId,
+        language: "en",
+        name: "",
+        photo: "",
+        purchases: [ "the-sacred-tree-en" ],
+        subscriptions: []
+      }
+      await addOrUpdateUser(user);
+      let message={
+          message: "updateProfile",
+          language: "en",
+          user: user,
+          jwtToken: jwtToken,
+          refreshToken: refreshToken,
+      }
+      return res.json(message);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(401).send('ERROR on apple login.');
+  }
+});
+
 authenticationRoutes.post('/refreshJwtToken', (req, res) => {
-  console.log("in refreshJwtToken");
 
   //begin security check
   const authHeader = req.headers.authorization;
@@ -139,4 +274,67 @@ authenticationRoutes.post('/refreshJwtToken', (req, res) => {
         "message": "valid-token",
       }));
   }
+});
+
+
+authenticationRoutes.get('/getUserName', async (req, res) => {
+  //console.log("getBookmarks called")
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+  const jwtToken = authHeader.split(' ')[1];
+
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  // end security check
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId=decodedPayload.userId;
+  const user = await getUser(userId);
+  //console.log("this is the userid");
+  //console.log(userId);
+  let messageToReturn = {
+    message: "success",
+    givenName: user.givenName,
+    familyName: user.familyName,
+    name: user.name,
+  };
+  return res.json(messageToReturn);
+});
+
+
+authenticationRoutes.post('/saveUserName', async (req, res) => {
+  //console.log("saveUserName");
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+  const jwtToken = authHeader.split(' ')[1];
+
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  // end security check
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId=decodedPayload.userId;
+  //console.log("this is the userid for which we will save data");
+  //console.log(userId);
+  //console.log(req);
+  const user = await getUser(userId);
+  const givenName = req.body.givenName;
+  const familyName = req.body.familyName;
+  const name = req.body.name;
+  user.givenName=givenName;
+  user.familyName=familyName;
+  user.name=name;
+  await addOrUpdateUser(user);
+  let messageToReturn = {
+    message: "success"
+  };
+  return res.json(messageToReturn);
+
+
 });
