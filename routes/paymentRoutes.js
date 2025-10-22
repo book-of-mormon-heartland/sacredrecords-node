@@ -3,7 +3,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 export const paymentRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
-import { getUserPurchases, addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs } from "../database/database.js"; // Import the database module
+import { addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs } from "../database/database.js"; // Import the database module
 
 const jwtSecret = process.env.JWT_SECRET;
 

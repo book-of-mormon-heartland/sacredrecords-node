@@ -4,7 +4,7 @@ import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import 'dotenv/config'; 
 import jwt from 'jsonwebtoken';
-import { db, addOrUpdateUser, getUserLanguage, saveLanguageToUserProfile, getUserPurchases } from "../database/database.js"; // Import the database module
+import { saveLanguageToUserProfile } from "../database/database.js"; // Import the database module
 import { checkToken } from "../security/security.js"; // Import the database module
 
 //const GOOGLE_WEB_CLIENT_ID  = process.env.GOOGLE_WEB_CLIENT_ID;

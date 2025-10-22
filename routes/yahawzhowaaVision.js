@@ -7,9 +7,10 @@ import { db, addBook, removeBook, addChapter, removeChapter, addChapterText, rem
 yahawzhowaa.get("/addYahawzhowaa", function (req, res) {
     let book = {};
     let chapter = {};
-/*
+
+
     book = {
-        id: "yahawzhowaa-en",
+        id: "yahawzhowaa-intro-en",
         title: "The Red Plates of Copper and Gold",
         subTitle: "The Plates of Yahawzhowaa",
         image: "https://storage.googleapis.com/sacred-records/books/yahawzhowaa/the-copper-record-615x771.jpg",
@@ -21,7 +22,7 @@ yahawzhowaa.get("/addYahawzhowaa", function (req, res) {
         isParent: true,
         hasChildBooks: false,
         order: 1,
-        parent: "",
+        parent: "yahawzhowaa-intro-en",
         visible: true,
         language: "en",
         category: "quetzal-condor",
@@ -30,13 +31,13 @@ yahawzhowaa.get("/addYahawzhowaa", function (req, res) {
         discountPriceText: "Subscription"
     }
     //removeBook(book);
-    //addBook(book);
-
+    addBook(book);
+/*
     chapter = {
         id: "yahawzhowaa-the-vision-en",
         title: "THE VISION OF THE RED PLATES",
         subTitle: "A Brief Explanation About The Record Of The Red Plates",
-        parent: "yahawzhowaa-en",
+        parent: "yahawzhowaa-intro-en",
         order: 1,
         visible: true
     }
@@ -46,7 +47,7 @@ yahawzhowaa.get("/addYahawzhowaa", function (req, res) {
         id: "yahawzhowaa-the-vision-en",
         title: "THE VISION OF THE RED PLATES",
         subTitle: "A Brief Explanation About The Record Of The Red Plates",
-        parent: "yahawzhowaa-en",
+        parent: "yahawzhowaa-intro-en",
         order: 1,
         visible: true,
         previousChapter: "",

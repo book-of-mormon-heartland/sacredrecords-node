@@ -145,23 +145,44 @@ export const removePreviousBookmark = async(bookmarkId) => {
 }
 
 
-export const  getUserPurchases = async( userId) => {
-  const docRef = db.collection('users').doc(userId);
-  try {
-    const docSnap = await docRef.get();
-    if (docSnap.exists) {
-      // The document exists, so get its data
-      const userData = docSnap.data();
-      return userData.purchases;
-    } else {
-      return "";
-    }
-  } catch (error) {
-    console.error("Error getting document:", error);
+export const  getPurchases = async( userId ) => {
+try {
+    const snapshot = await db
+      .collection('purchases')
+      .where('userId', '==', userId)
+      .get();
+
+    const purchases = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return purchases;
+  } catch (err) {
+    console.error('Error getting documents', err);
+    return [];
   }
-  return "";
 }
 
+
+export const  getSubscriptions = async( userId) => {
+try {
+    const snapshot = await db
+      .collection('subscriptions')
+      .where('userId', '==', userId)
+      .get();
+
+    const subscriptions = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return subscriptions;
+  } catch (err) {
+    console.error('Error getting documents', err);
+    return [];
+  }
+}
 
 export const getSubscriptionPrice = async( id ) => {
   const docRef = db.collection('subscriptiondetails').doc(id);
@@ -181,6 +202,7 @@ export const getSubscriptionPrice = async( id ) => {
 
 }
 
+
 export const getUserSubscriptions = async (userId) => {
   const docRef = db.collection('users').doc(userId);
   try {
@@ -198,8 +220,9 @@ export const getUserSubscriptions = async (userId) => {
   }
 }
 
+
 export const  addPurchase = async( userId, name, email, bookId, bookTitle, code, paidPrice) => {
-  console.log("addPurchase");
+  //console.log("addPurchase");
   /*
     userId, name, req.body.id, req.body.bookTitle, req.body.code, req.body.bookPrice
   */
@@ -224,6 +247,39 @@ export const  addPurchase = async( userId, name, email, bookId, bookTitle, code,
     console.error('Error adding purchase:', error);
   }
 }
+
+
+
+export const  updatePurchase = async( purchase ) => {
+  const docRef = db.collection('purchases').doc(purchase.time);
+  await docRef.set( purchase, { merge: true } );
+}
+
+export const  updateSubscription = async( subscription ) => {
+  const docRef = db.collection('subscriptions').doc(subscription.time);
+  await docRef.set( subscription, { merge: true } );
+}
+
+export const  removePurchase = async( purchase ) => {
+  const docRef = db.collection('purchases').doc(purchase.time);
+   try {
+    await  docRef.delete();
+    console.log('purchase successfully deleted!');
+  } catch (error) {
+    console.error('Error deleting user:', error);
+  }
+}
+
+export const  removeSubscription = async( subscription ) => {
+  const docRef = db.collection('subscriptions').doc(subscription.time);
+   try {
+    await  docRef.delete();
+    console.log('subscription successfully deleted!');
+  } catch (error) {
+    console.error('Error deleting subscription:', error);
+  }
+}
+
 
 export const  addSubscription = async( userId, name, email, product, monthlyPrice) => {
   let now = new Date();

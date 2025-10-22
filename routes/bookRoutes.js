@@ -236,7 +236,7 @@ bookRoutes.get('/populateStore', (req, res) => {
     snapshot.forEach(user => {
       users.push({ id: user.id, ...user.data() });
     });
-    let purchases = users[0].purchases || [];
+    let purchases = users[0]?.purchases || [];
     //
     //.where("id", not in , user.purchase
 

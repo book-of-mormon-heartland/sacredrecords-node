@@ -5,7 +5,7 @@ import jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
 import { OAuth2Client } from 'google-auth-library';
 import { checkTokenUserMatch, checkIfTokenValid } from "../security/security.js";
-import { getUser, addOrUpdateUser, getUserLanguage, getUserPurchases, getUserSubscriptions } from "../database/database.js"; // Import the database module
+import { getUser, addOrUpdateUser, getUserLanguage } from "../database/database.js"; // Import the database module
 
 export const authenticationRoutes = express.Router();
 
@@ -27,9 +27,11 @@ authenticationRoutes.post('/googleLogin', async(req, res) => {
   // retrieve the token
   const token = req.body.token;
   const user = req.body.user;
-  
+  //console.log(token);
+  //console.log(user);
   // validate the token with google.
   const client = new OAuth2Client(GOOGLE_WEB_CLIENT_ID);
+  //console.log(client);
   const verify = async () => {
     const ticket = await client.verifyIdToken({
         idToken: token,
@@ -37,7 +39,8 @@ authenticationRoutes.post('/googleLogin', async(req, res) => {
     });
     const payload = ticket.getPayload();
     const userid = payload['sub'];
-    
+    //console.log(userid);
+
     if (payload.sub !== user.id) {
       return res.json(
         JSON.stringify({
@@ -276,65 +279,3 @@ authenticationRoutes.post('/refreshJwtToken', (req, res) => {
   }
 });
 
-
-authenticationRoutes.get('/getUserName', async (req, res) => {
-  //console.log("getBookmarks called")
-  //begin security check
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).send('Unauthorized: No token provided or malformed.');
-  }
-  const jwtToken = authHeader.split(' ')[1];
-
-  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
-      return res.status(500).send('Unauthorized: Token is invalid or expired.');
-  }
-  // end security check
-  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
-  const userId=decodedPayload.userId;
-  const user = await getUser(userId);
-  //console.log("this is the userid");
-  //console.log(userId);
-  let messageToReturn = {
-    message: "success",
-    givenName: user.givenName,
-    familyName: user.familyName,
-    name: user.name,
-  };
-  return res.json(messageToReturn);
-});
-
-
-authenticationRoutes.post('/saveUserName', async (req, res) => {
-  //console.log("saveUserName");
-  //begin security check
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).send('Unauthorized: No token provided or malformed.');
-  }
-  const jwtToken = authHeader.split(' ')[1];
-
-  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
-      return res.status(500).send('Unauthorized: Token is invalid or expired.');
-  }
-  // end security check
-  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
-  const userId=decodedPayload.userId;
-  //console.log("this is the userid for which we will save data");
-  //console.log(userId);
-  //console.log(req);
-  const user = await getUser(userId);
-  const givenName = req.body.givenName;
-  const familyName = req.body.familyName;
-  const name = req.body.name;
-  user.givenName=givenName;
-  user.familyName=familyName;
-  user.name=name;
-  await addOrUpdateUser(user);
-  let messageToReturn = {
-    message: "success"
-  };
-  return res.json(messageToReturn);
-
-
-});

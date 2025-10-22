@@ -30,6 +30,9 @@ app.get('/', (req, res) => {
 import { authenticationRoutes } from './routes/authenticationRoutes.js';
 app.use('/authentication', authenticationRoutes);
 
+import { profileRoutes } from "./routes/profileRoutes.js";
+app.use("/profiles", profileRoutes);
+
 import { paymentRoutes } from './routes/paymentRoutes.js';
 app.use('/payments', paymentRoutes);
 
@@ -51,7 +54,7 @@ app.use("/rest", router);
 import { handsomeLake } from "./routes/handsomelake.js";
 app.use("/handsomeLake", handsomeLake);
 
-import { yahawzhowaa } from "./routes/yahawzhowaaBook6.js";
+import { yahawzhowaa } from "./routes/yahawzhowaaBook9.js";
 app.use("/yahawzhowaa", yahawzhowaa);
 
 //import { theSacredTree } from "./routes/thesacredtree.js";
