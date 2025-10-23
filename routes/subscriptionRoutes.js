@@ -101,6 +101,7 @@ subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
   }
   // end security check
   let subscriptionName = req.body.subscription;  
+  let subscriptionId=req.body.subscriptionId;
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
   let user = await getUser(userId);
@@ -118,7 +119,7 @@ subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
     //create the subscription in the Subscriptions table.
     isSubscribed=true;
     let monthlyPrice = await getSubscriptionPrice('quetzal-condor')
-    await addSubscription( userId, user.name, user.email, subscriptionName, monthlyPrice)
+    await addSubscription( userId, user.name, user.email, subscriptionName, subscriptionId, monthlyPrice);
     //console.log("Need to make the db entry for the subscription")
   }
   
@@ -128,4 +129,44 @@ subscriptionRoutes.post('/finalizePurchase', async (req, res) => {
         message: "success",
         isSubscribed: isSubscribed
     }))
+});
+
+
+subscriptionRoutes.post('/isUserSubscribed', async (req, res) => {
+  //console.log("in isUserSubscribed");
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+  const jwtToken = authHeader.split(' ')[1];
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  // end security check
+  //console.log(req.body.subscription);
+  let subscriptionName = req.body.subscription;  
+  //let subscriptionId=req.body.subscriptionId;
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId = decodedPayload.userId;
+  let user = await getUser(userId);
+  let userSubscriptions = await getUserSubscriptions(userId);
+  //console.log(user);
+  //console.log(userSubscriptions);
+  let isSubscribed = false;
+  if (userSubscriptions.includes(subscriptionName)) {
+    //console.log("yes, its true!");
+    isSubscribed=true;
+  } else {
+    //console.log("not a match");
+    isSubscribed=false;
+  }
+  //console.log("isSubscribed value");
+  //console.log(isSubscribed);
+
+  return res.json(
+    {
+        message: "success",
+        isSubscribed: isSubscribed
+    })
 });

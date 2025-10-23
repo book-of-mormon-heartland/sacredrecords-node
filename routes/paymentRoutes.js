@@ -3,7 +3,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 export const paymentRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
-import { addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs } from "../database/database.js"; // Import the database module
+import { addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs, getUserSubscriptions, getSubscriptions, addSubscriptionsToRemove } from "../database/database.js"; // Import the database module
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -370,20 +370,20 @@ paymentRoutes.post('/getPaymentIntent', async (req, res) => {
 */
 paymentRoutes.get('/paymentCallback', async (req, res) => {
   //console.log("in payment callback");
-  await addToLogs("made it to payment Callback");
-  await addToLogs("about to get the headers string");
+  //await addToLogs("made it to payment Callback");
+  //await addToLogs("about to get the headers string");
   let headersString = "";
    // null, 2 for pretty-printing
   try {
     headersString = JSON.stringify(req.headers, null, 2); // null, 2 for pretty-printing
   } catch (error) {
     headersString = "no headers";
-    await addToLogs(error.message);
+    //await addToLogs(error.message);
   }
   //console.log('Request Headers as String:');
   //console.log(headersString);
-  await addToLogs("next is headerstring");
-  await addToLogs(headersString);
+  //await addToLogs("next is headerstring");
+  //await addToLogs(headersString);
   
   let sig;
   let event;
@@ -416,3 +416,99 @@ paymentRoutes.get('/paymentCallback', async (req, res) => {
   // Return a 200 response to acknowledge receipt of the event
   res.json({ received: true });
 });
+
+
+paymentRoutes.post('/cancelSubscription', async (req, res) => {
+  //console.log("in isUserSubscribed");
+  //begin security check
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send('Unauthorized: No token provided or malformed.');
+  }
+  const jwtToken = authHeader.split(' ')[1];
+  if (!checkIfTokenValid(jwtToken, jwtSecret)) {
+      return res.status(500).send('Unauthorized: Token is invalid or expired.');
+  }
+  // end security check
+  //console.log(req.body.subscription);
+  let subscriptionName = req.body.subscription;  
+  //let subscriptionId=req.body.subscriptionId;
+  const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+  const userId = decodedPayload.userId;
+  let user = await getUser(userId);
+  let userSubscriptions = await getUserSubscriptions(userId);
+  //console.log(user);
+  //console.log(userSubscriptions);
+  let isSubscribed = false;
+  if (userSubscriptions.includes(subscriptionName)) {
+    //console.log("yes, its true!");
+    isSubscribed=true;
+  } else {
+    //console.log("not a match");
+    isSubscribed=false;
+  }
+  if(isSubscribed) {
+    // lets get the subscription id from the subscriptions table.  
+    // Then delete the subscription from stripe.
+    // Then delete the subscription from the Users table.
+    const subscriptions = await getSubscriptions(userId);
+    for (let i = 0; i < subscriptions.length; i++) {
+      //console.log(subscriptions[i]);
+      if(subscriptions[i].product===subscriptionName) {
+        let subscriptionId = subscriptions[i].subscriptionId;
+        try {
+          const cancellation = await stripeClient.subscriptions.cancel(subscriptionId);
+          //console.log("Subscription cancellation");
+          //console.log(cancellation);
+
+          const billingCycleAnchor=cancellation.billing_cycle_anchor;
+          const daysToAdd = 30;
+          const subscriptionExpirationDate = billingCycleAnchor + daysToAdd * 86400;
+          
+          const date = new Date(subscriptionExpirationDate * 1000); // convert seconds → ms
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed, add 1
+          const day = String(date.getDate()).padStart(2, '0');
+          const formattedDate = `${year}-${month}-${day}`;
+
+          const today = new Date(); // convert seconds → ms
+          const todayYear = today.getFullYear();
+          const todayMonth = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed, add 1
+          const todayDay = String(today.getDate()).padStart(2, '0');
+          const todayFormattedDate = `${todayYear}-${todayMonth}-${todayDay}`;
+
+
+          // need to calculate the adjustment to when this is supposed to happen.
+          let toRemove = {
+            userId: userId,
+            subscriptionName: subscriptionName,
+            cancellationDate: todayFormattedDate,
+            formattedEndDate: formattedDate,
+            subscriptionExpirationDate: subscriptionExpirationDate
+          }
+          addSubscriptionsToRemove(toRemove);
+
+          return res.json(
+          {
+              message: "Subscription good until " + formattedDate,
+          });
+
+        } catch (error) {
+          return res.json(
+          {
+              message: "Error Cancelling Subscription",
+          });
+        }
+        
+      } // Access element by index
+    }
+    //db.collection('subscriptions').doc(subscription.time);
+
+  }
+  return res.json(
+    {
+        message: "success",
+    })
+
+});
+

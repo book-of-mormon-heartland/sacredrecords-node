@@ -281,7 +281,7 @@ export const  removeSubscription = async( subscription ) => {
 }
 
 
-export const  addSubscription = async( userId, name, email, product, monthlyPrice) => {
+export const  addSubscription = async( userId, name, email, product, subscriptionId, monthlyPrice) => {
   let now = new Date();
   let systemTime = now.toISOString();
   const readableDate = now.toDateString();
@@ -292,9 +292,10 @@ export const  addSubscription = async( userId, name, email, product, monthlyPric
       name: name,
       email: email,
       product: product,
+      subscriptionId: subscriptionId,
       monthlyPrice: monthlyPrice,
       time : systemTime,
-      date : readableDate
+      date : readableDate,
     }
     await  docRef.set(subscription);
   } catch (error) {
@@ -475,3 +476,14 @@ export const addToLogs= async( logEntry ) => {
     console.error('log entry error:', error);
   }
 }
+
+
+export const addSubscriptionsToRemove = async (toRemove) => {
+  const docRef = db.collection('subscriptionstoremove').doc(toRemove.userId + "-" + toRemove.subscriptionExpirationDate);
+  try {
+    await  docRef.set(toRemove);
+    console.log('subscriptionstoremove successfully added!');
+  } catch (error) {
+    console.error('Error adding subscriptionstoremove:', error);
+  }
+};
