@@ -461,7 +461,7 @@ export const addPaymentIntent= async( sig, paymentIntent ) => {
   }
 }
 
-export const addToLogs= async( logEntry ) => {
+export const addToLogs= async(userId, logEntry ) => {
   const timestamp = Date.now();
   console.log(timestamp);
   console.log(logEntry);
@@ -469,6 +469,8 @@ export const addToLogs= async( logEntry ) => {
   const docRef = db.collection('logs').doc("" + timestamp + "");
   try {
     await docRef.set( {
+      userId: userId,
+      date: timestamp,
       logEntry:  logEntry
     });
     console.log('log entry successfully added!');

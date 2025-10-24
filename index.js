@@ -30,6 +30,9 @@ app.get('/', (req, res) => {
 import { authenticationRoutes } from './routes/authenticationRoutes.js';
 app.use('/authentication', authenticationRoutes);
 
+import { utilityRoutes } from './routes/utilityRoutes.js';
+app.use('/utilities', utilityRoutes);
+
 import { profileRoutes } from "./routes/profileRoutes.js";
 app.use("/profiles", profileRoutes);
 

@@ -1,0 +1,51 @@
+
+import express from 'express';
+//import { text } from 'body-parser';
+import { OAuth2Client } from 'google-auth-library';
+import 'dotenv/config'; 
+import jwt from 'jsonwebtoken';
+import { addToLogs } from "../database/database.js"; // Import the database module
+import { checkToken } from "../security/security.js"; // Import the database module
+
+//const GOOGLE_WEB_CLIENT_ID  = process.env.GOOGLE_WEB_CLIENT_ID;
+//const GOOGLE_ANDROID_CLIENT_ID = process.env.GOOGLE_ANDROID_CLIENT_ID;
+//const GOOGLE_IOS_CLIENT_ID = process.env.GOOGLE_IOS_CLIENT_ID;
+const jwtSecret = process.env.JWT_SECRET;
+
+export const utilityRoutes = express.Router();
+
+// Home page route.
+utilityRoutes.get("/", function (req, res) {
+  res.send("utilities home page");
+});
+
+
+utilityRoutes.post('/log', (req, res) => {
+    console.log("log");
+    
+    //begin security check
+    /*
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).send('Unauthorized: No token provided or malformed.');
+    }
+    const jwtToken = authHeader.split(' ')[1];
+    if (!checkToken(jwtToken)) {
+        return res.status(401).send('Unauthorized: Token is invalid or expired.');
+    }
+    */
+    // end security check
+    //curl -X POST -H "Content-Type: application/json" -d '{"language": "en"}' https://8080-cs-250507813358-default.cs-us-east1-vpcf.cloudshell.dev/rest/POST/setLanguage
+    //https://8080-cs-250507813358-default.cs-us-east1-vpcf.cloudshell.dev/authentication/googleLogin
+    //const decodedPayload = jwt.verify(jwtToken, jwtSecret);
+    const log = req.body.log;
+    //const userId = decodedPayload.userId;
+    // now save the language to the user profile.
+    //console.log(log);
+    addToLogs("0", log);
+    
+    return res.status(200).json({
+        message: "Success",
+    });
+});
+
