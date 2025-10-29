@@ -267,19 +267,13 @@ authenticationRoutes.post('/cognitoLogin', async(req, res) => {
   console.log("Cognito Login Here from post");
   // retrieve the token
   const token = req.body.token;
-  //console.log(token);
-  //console.log(user);
   // validate the token with cognito.
   verifyCognitoToken(token)
     .then(async (decoded) => {
       //console.log("Token is valid:", decoded);
       // Token is valid, proceed with your logic here
       // get user by email.  If not found create user.
-      console.log(  "decoded.sub: " + decoded.sub);
-      console.log(  "decoded.email: " + decoded.email);
       let user = await getUser(decoded.sub);
-      console.log("user");
-      console.log(user);
       let jwtToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '1h' });
       let refreshToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
 
