@@ -96,6 +96,49 @@ export const  getUser= async( userId) => {
   return "";
 }
 
+// uniquiness enforced on username by congnito
+export const getUserByUsername = async( username ) => {
+  try {
+    const snapshot = await db
+      .collection('users')
+      .where('username', '==', username)
+      .get();
+
+    if (snapshot.empty) {
+      console.log('No matching documents.');
+      return null;
+    }
+
+    // Assuming usernames are unique, return the first matching document
+    const userDoc = snapshot.docs[0];
+    return { id: userDoc.id, ...userDoc.data() };
+  } catch (err) {
+    console.error('Error getting user by username', err);
+    return null;
+  }
+}
+
+export const  getUsersByEmail= async( email ) => {
+try {
+    const snapshot = await db
+      .collection('users')
+      .where('email', '==', email)
+      .get();
+
+    const users = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return users;
+  } catch (err) {
+    console.error('Error getting users', err);
+    return [];
+  }
+}
+
+
+
 export const  getBook = async( bookId ) => {
   const docRef = db.collection('books').doc(bookId);
   try {

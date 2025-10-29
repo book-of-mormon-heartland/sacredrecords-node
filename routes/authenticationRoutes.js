@@ -5,7 +5,11 @@ import jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
 import { OAuth2Client } from 'google-auth-library';
 import { checkTokenUserMatch, checkIfTokenValid } from "../security/security.js";
-import { getUser, addOrUpdateUser, getUserLanguage } from "../database/database.js"; // Import the database module
+import { getUser, addOrUpdateUser, getUserLanguage, getUserByUsername } from "../database/database.js"; // Import the database module
+import jwksClient from 'jwks-rsa';
+import { CognitoIdentityProviderClient, SignUpCommand, ConfirmSignUpCommand  } from "@aws-sdk/client-cognito-identity-provider";
+import { verify } from 'crypto';
+
 
 export const authenticationRoutes = express.Router();
 
@@ -59,6 +63,8 @@ authenticationRoutes.post('/googleLogin', async(req, res) => {
       // todo should be poplulated by the user OS.
       let language = "en";
       user.language=language;
+      user.loginSource="google";
+
       let purchases = ["the-sacred-tree-en"];
       user.purchases = purchases;
       let subscriptions = [];
@@ -204,6 +210,7 @@ authenticationRoutes.post('/appleLogin', async (req, res) => {
       //console.log("User is not in the database.  We now can create it.");
       user = {
         email: email,
+        loginSource: "apple",
         familyName: "",
         givenName: "",
         id: userId,
@@ -228,6 +235,160 @@ authenticationRoutes.post('/appleLogin', async (req, res) => {
     return res.status(401).send('ERROR on apple login.');
   }
 });
+
+const client = jwksClient({
+  jwksUri: 'https://cognito-idp.us-east-2.amazonaws.com/us-east-2_Gu5AvTv9i/.well-known/jwks.json'
+});
+
+function getKey(header, callback) {
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err) return callback(err);
+    
+    // Support both v2 and v3+ of jwks-rsa
+    const signingKey = key.publicKey || key.rsaPublicKey;
+    callback(null, signingKey);
+  });
+}
+
+export const verifyCognitoToken = (token) => {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, getKey, {
+      algorithms: ['RS256'],
+      issuer: 'https://cognito-idp.us-east-2.amazonaws.com/us-east-2_Gu5AvTv9i',
+    }, (err, decoded) => {
+      if (err) reject(err);
+      else resolve(decoded);
+    });
+  });
+};
+
+// nov 15 baby shower
+authenticationRoutes.post('/cognitoLogin', async(req, res) => {
+  console.log("Cognito Login Here from post");
+  // retrieve the token
+  const token = req.body.token;
+  //console.log(token);
+  //console.log(user);
+  // validate the token with cognito.
+  verifyCognitoToken(token)
+    .then(async (decoded) => {
+      //console.log("Token is valid:", decoded);
+      // Token is valid, proceed with your logic here
+      // get user by email.  If not found create user.
+      console.log(  "decoded.sub: " + decoded.sub);
+      console.log(  "decoded.email: " + decoded.email);
+      let user = await getUser(decoded.sub);
+      console.log("user");
+      console.log(user);
+      let jwtToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '1h' });
+      let refreshToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
+
+
+      return res.json(
+        JSON.stringify({
+          "message": "Cognito Token is valid.",
+          "user": user,
+          "jwtToken": jwtToken,
+          "refreshToken": refreshToken,
+        }));
+    })
+    .catch((err) => {
+      console.error("Token verification failed:", err);
+      // Token is invalid, handle the error here
+      return res.json(
+        JSON.stringify({
+          "message": "Error: Invalid Cognito Token.",
+          "jwtToken": "",
+          "refreshToken": "",
+        }));
+    });
+});
+
+const cognito = new CognitoIdentityProviderClient({ region: "us-east-2" });
+
+authenticationRoutes.post('/cognitoCreateAccount', async(req, res) => {
+  //console.log("Cognito Create Account");
+  // retrieve the token
+  const { username, givenName, familyName, fullName, email, password } = req.body;
+
+  // Here you would typically call your backend or Cognito service to create the account
+  // For example:
+  try {
+    const params = {
+        ClientId: "6hfre57q3l5b6si19k6d0rt7ej", // from Cognito User Pool App Client (not the pool ID)
+        Username: username,
+        Password: password,
+        UserAttributes: [
+          { Name: "email", Value: email },
+          { Name: "given_name", Value: givenName },
+          { Name: "family_name", Value: familyName },
+          { Name: "name", Value: fullName },
+        ],
+      };
+
+    const command = new SignUpCommand(params);
+    const response = await cognito.send(command);
+    
+    let user = {
+      id: response.UserSub,
+      accountSource: "cognito",
+      verified: false,
+      email: email,
+      familyName: familyName || "",
+      givenName: givenName || "",
+      name: fullName || "",
+      username: username,
+      photo: "",
+      language: "en",
+      purchases: [ "the-sacred-tree-en" ],
+      subscriptions: []
+    }
+    await addOrUpdateUser(user);
+
+    return res.json({
+      message: "Success",
+    });
+
+  } catch (err) {
+    return res.json({
+      message: err.message
+    });
+
+  }
+});
+
+
+authenticationRoutes.post('/cognitoVerifyAccount', async(req, res) => {
+  //console.log("Cognito Verify Account");
+  // retrieve the token
+  const { username, verificationCode } = req.body;
+  //console.log("username: " + username);
+  //console.log("verificationCode: " + verificationCode); 
+
+  // Here you would typically call your backend or Cognito service to create the account
+  // For example:
+  const params = {
+      ClientId: "6hfre57q3l5b6si19k6d0rt7ej", // from Cognito User Pool App Client (not the pool ID)
+      Username: username,
+      ConfirmationCode: verificationCode,
+  };
+
+  try {
+    const command = new ConfirmSignUpCommand(params);
+    const response = await cognito.send(command);
+    let user = await getUserByUsername(username);
+    user.verified = true;
+    await addOrUpdateUser(user);
+    return res.json({
+      message: "success",
+    });
+  } catch (err) {
+    return res.json({
+      message: err.message,
+    });
+  }
+});
+
 
 authenticationRoutes.post('/refreshJwtToken', (req, res) => {
 
