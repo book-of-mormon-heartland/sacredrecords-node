@@ -158,7 +158,7 @@ authenticationRoutes.post('/appleLogin', async (req, res) => {
   //console.log("appleLogin");
   const familyName = req.body.familyName;
   const givenName = req.body.givenName;
-  const name = familyName + " " + givenName;
+  const name = req.body.fullName;
 
   const appleUserId = req.body.user;
   const idToken = req.body.idToken;
@@ -211,14 +211,14 @@ authenticationRoutes.post('/appleLogin', async (req, res) => {
       user = {
         email: email,
         loginSource: "apple",
-        familyName: "",
-        givenName: "",
+        familyName: familyName || "",
+        givenName: givenName || "",
         id: userId,
         language: "en",
-        name: "",
+        name: name || "",
         photo: "",
         purchases: [ "the-sacred-tree-en" ],
-        subscriptions: []
+        subscriptions: [ "quetzal-condor" ]
       }
       await addOrUpdateUser(user);
       let message={
@@ -264,7 +264,7 @@ export const verifyCognitoToken = (token) => {
 
 // nov 15 baby shower
 authenticationRoutes.post('/cognitoLogin', async(req, res) => {
-  console.log("Cognito Login Here from post");
+  //console.log("Cognito Login Here from post");
   // retrieve the token
   const token = req.body.token;
   // validate the token with cognito.
@@ -273,7 +273,11 @@ authenticationRoutes.post('/cognitoLogin', async(req, res) => {
       //console.log("Token is valid:", decoded);
       // Token is valid, proceed with your logic here
       // get user by email.  If not found create user.
+      //console.log("decoded.sub");
+      //console.log(decoded.sub);
       let user = await getUser(decoded.sub);
+      //console.log(user);
+
       let jwtToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '1h' });
       let refreshToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
 

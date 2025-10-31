@@ -68,10 +68,14 @@ subscriptionRoutes.post('/checkIfSubscribed', async (req, res) => {
   }
   // end security check
   let subscriptionName = req.body.subscription;
-
+  //console.log("subscriptionName");
+  //console.log(subscriptionName);
   
   const decodedPayload = jwt.verify(jwtToken, jwtSecret);
   const userId = decodedPayload.userId;
+  //console.log("decodedPayload");
+  //console.log(decodedPayload);
+  //console.log("this is the userId " + userId);
   let userSubscriptions = await getUserSubscriptions(userId);
   let isSubscribed = false;
   if (userSubscriptions.includes(subscriptionName)) {

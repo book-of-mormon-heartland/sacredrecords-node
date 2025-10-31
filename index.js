@@ -57,9 +57,12 @@ app.use("/rest", router);
 import { handsomeLake } from "./routes/handsomelake.js";
 app.use("/handsomeLake", handsomeLake);
 
-import { yahawzhowaa } from "./routes/yahawzhowaaBook9.js";
-app.use("/yahawzhowaa", yahawzhowaa);
+import { midiwag } from "./routes/midiwag.js";
+app.use("/midiwag", midiwag);
 
+
+//import { yahawzhowaa } from "./routes/yahawzhowaaBook9.js";
+//app.use("/yahawzhowaa", yahawzhowaa);
 //import { theSacredTree } from "./routes/thesacredtree.js";
 //app.use("/thesacredtree", theSacredTree);
 //import { copper } from "./routes/thecopperrecord.js";

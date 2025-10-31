@@ -86,30 +86,35 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
   let userName = user.name;
   let userEmail = user.email;
   //console.log(userEmail);
-
-  const customers = await stripeClient.customers.search({
-    query: 'email:\''+ userEmail +'\'',
-  });
-  
-  let customerId;
-
-  try {
-    if(customers.length>1) {
-      customerId = customers.data[0].id;
-    } else {
-      let customer = await stripeClient.customers.create({
-        email: userEmail,
-        name: userName,
-        metadata: {
-            internal_user_id: userId
-        }
-      });
-      customerId = customer.id;
+  let customerId = user?.customerId | "";
+  let customer;
+  if(customerId=="") {
+    const customers = await stripeClient.customers.search({
+      query: 'email:\''+ userEmail +'\'',
+    });
+    
+    try {
+      if(customers.length>1) {
+        customerId = customers.data[0].id;
+      } else {
+        let customer = await stripeClient.customers.create({
+          email: userEmail,
+          name: userName,
+          metadata: {
+              internal_user_id: userId
+          }
+        });
+        customerId = customer.id;
+        user.customerId=customerId;
+        updateUser(user);
+      }
+    } catch (e) {
+      console.log("error in customer search");
+      console.log(e);
+      return res.status(400).json({ error: e.message });
     }
-  } catch (e) {
-    console.log("error in customer search");
-    console.log(e);
-    return res.status(400).json({ error: e.message });
+  } else {
+    // no need to create a customer. it already exists.
   }
   //console.log("customerId: " + customerId);
   
@@ -129,9 +134,8 @@ paymentRoutes.post('/setupIntent', async (req, res) => {
       usage: 'off_session', 
 
       // Optional: Enable a variety of payment methods automatically
-      automatic_payment_methods: {
-          enabled: true,
-      },
+      payment_method_types: ['card'],
+
     });
     //console.log("setupIntent"); 
     //console.log(setupIntent);
@@ -171,13 +175,16 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
     const userId = decodedPayload.userId;
     let user = await getUser(userId);
     let userEmail = user.email;
-
+    let customerId = user.customerId;
+    
+    /*
     const customers = await stripeClient.customers.search({
       query: 'email:\''+ userEmail +'\'',
     });
     //console.log("customerSearch");
     //console.log(customers);
     let customerId = customers.data[0].id;
+    */
 
     const productFromSearch = await stripeClient.products.search({
       query: "metadata[\"name\"]:\"quetzal-condor-subscription\""
@@ -236,6 +243,9 @@ paymentRoutes.post('/createSubscription', async (req, res) => {
       // Ensure the invoice and payment intent are returned
       expand: ['latest_invoice.payment_intent'], 
     });
+
+    user.subscriptionId =subscription.id;
+    updateUser(user);
     
     return res.json({
       message:"success",

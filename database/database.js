@@ -247,6 +247,8 @@ export const getSubscriptionPrice = async( id ) => {
 
 
 export const getUserSubscriptions = async (userId) => {
+  //console.log("getUserSubscritions userid");
+  //console.log(userId);
   const docRef = db.collection('users').doc(userId);
   try {
     const docSnap = await docRef.get();
@@ -527,7 +529,7 @@ export const addSubscriptionsToRemove = async (toRemove) => {
   const docRef = db.collection('subscriptionstoremove').doc(toRemove.userId + "-" + toRemove.subscriptionExpirationDate);
   try {
     await  docRef.set(toRemove);
-    console.log('subscriptionstoremove successfully added!');
+    console.log('subscriptionstoremove successfully removed!');
   } catch (error) {
     console.error('Error adding subscriptionstoremove:', error);
   }
