@@ -5,6 +5,7 @@ export const paymentRoutes = express.Router();
 import { checkIfTokenValid } from "../security/security.js";
 import { addPurchase, getUser, updateUser, addPaymentEvent, addPaymentIntent, addToLogs, getUserSubscriptions, getSubscriptions, addSubscriptionsToRemove } from "../database/database.js"; // Import the database module
 
+
 const jwtSecret = process.env.JWT_SECRET;
 
 const DEV_SK = process.env.DEV_SK;
@@ -521,4 +522,5 @@ paymentRoutes.post('/cancelSubscription', async (req, res) => {
     })
 
 });
+
 

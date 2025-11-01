@@ -349,6 +349,29 @@ export const  addSubscription = async( userId, name, email, product, subscriptio
 }
 
 
+export const  addAppleSubscription = async( userId, name, email, product, appleReceipt, monthlyPrice) => {
+  let now = new Date();
+  let systemTime = now.toISOString();
+  const readableDate = now.toDateString();
+  const docRef = db.collection('subscriptions').doc(systemTime);
+  try {
+    let subscription = {
+      userId: userId,
+      name: name,
+      email: email,
+      product: product,
+      appleReceipt: appleReceipt,
+      monthlyPrice: monthlyPrice,
+      time : systemTime,
+      date : readableDate,
+    }
+    await  docRef.set(subscription);
+  } catch (error) {
+    console.error('Error adding subscription:', error);
+  }
+}
+
+
 export const  saveLanguageToUserProfile = async( userId, language ) => {
   const docRef = db.collection('users').doc(userId);
   await docRef.update( { language: language } );
